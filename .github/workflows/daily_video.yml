@@ -1,0 +1,40 @@
+name: Daily Medusa Video
+
+on:
+  schedule:
+    - cron: "0 14 * * *"   # Runs every day at 2PM UTC
+  workflow_dispatch:
+
+jobs:
+  generate-video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120   # Max 2 hours
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate story
+        run: python3 story_generator.py
+
+      - name: Generate images (20 scenes)
+        run: python3 image_generator.py
+
+      - name: Generate voiceover
+        run: python3 tts_generator.py
+
+      - name: Build video
+        run: python3 video_builder.py
+
+      - name: Upload to YouTube
+        run: python3 upload_to_youtube.py
