@@ -1,0 +1,1 @@
+Generate a Python script called story_generator.py that outputs a cinematic daily Medusa story in JSON format. Include 5 shuffled scenes, each with a title and description. Save the result as daily_story.json.
