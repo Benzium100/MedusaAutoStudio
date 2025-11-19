@@ -1,18 +1,38 @@
-import json
-from PIL import Image, ImageDraw, ImageFont
+import subprocess
 import os
 
-with open("daily_story.json") as f:
-    story = json.load(f)
+# Settings
+image_folder = "./images"
+audio_file = "story_audio.mp3"  # Generated TTS file
+output_video = "daily_video.mp4"
+frame_duration = 60  # Each image lasts 1 min → 30 images = ~30 min
 
-os.makedirs("images", exist_ok=True)
-font = ImageFont.load_default()
+# Generate input.txt for FFmpeg
+image_files = sorted([f for f in os.listdir(image_folder) if f.endswith(".png")])
+if not image_files:
+    raise Exception("No images found in ./images. Run image_generator.py first!")
 
-for i, scene in enumerate(story["scenes"]):
-    img = Image.new("RGB", (1280, 720), color=(30, 30, 60))  # Dark cinematic background
-    draw = ImageDraw.Draw(img)
-    draw.text((50, 50), scene["text"], fill="white", font=font)
-    img_path = f"images/scene_{i+1}.png"
-    img.save(img_path)
+with open("input.txt", "w") as f:
+    for img in image_files:
+        f.write(f"file '{os.path.join(image_folder, img)}'\n")
+        f.write(f"duration {frame_duration}\n")
+    # Repeat last image to match audio length
+    f.write(f"file '{os.path.join(image_folder, image_files[-1])}'\n")
 
-print(f"{len(story['scenes'])} cinematic images generated successfully!")
+# Build the video
+cmd = [
+    "ffmpeg",
+    "-y",
+    "-f", "concat",
+    "-safe", "0",
+    "-i", "input.txt",
+    "-i", audio_file,
+    "-c:v", "libx264",
+    "-pix_fmt", "yuv420p",
+    "-c:a", "aac",
+    "-shortest",
+    output_video
+]
+
+subprocess.run(cmd, check=True)
+print(f"Video created successfully: {output_video}")
