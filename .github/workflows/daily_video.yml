@@ -1,10 +1,9 @@
-name: Daily Medusa Video
+name: Daily Video
 
 on:
-  schedule:
-    # Runs at 2 PM Nigeria time (UTC+1 → 13:00 UTC)
-    - cron: '0 13 * * *'
   workflow_dispatch:
+  schedule:
+    - cron: '0 14 * * *' # Runs daily at 2 PM Nigeria time (UTC+1)
 
 jobs:
   build-and-upload:
@@ -22,17 +21,31 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install moviepy gTTS requests Pillow huggingface-hub google-api-python-client
+          pip install -r requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
-      - name: Generate images
+      - name: Generate Story
+        run: |
+          python story_generator.py
+
+      - name: Generate Images
         env:
           HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
         run: |
           python image_generator.py
 
-      - name: Build video
+      - name: Generate TTS Audio
+        run: |
+          python tts_generator.py
+
+      - name: Build Video
         run: |
           python video_builder.py
+
+      - name: Generate Thumbnail
+        run: |
+          python thumbnail_generator.py
 
       - name: Upload to YouTube
         env:
@@ -40,8 +53,9 @@ jobs:
         run: |
           python youtube_upload.py
 
-      - name: Upload to Drive (optional)
+      - name: Upload to Google Drive (Optional)
+        if: secrets.DRIVE_CREDENTIALS != ''
         env:
           DRIVE_CREDENTIALS: ${{ secrets.DRIVE_CREDENTIALS }}
         run: |
-          python drive_upload.py || echo "Drive upload skipped: credentials missing or empty"
+          python drive_upload.py
