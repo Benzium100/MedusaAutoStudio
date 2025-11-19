@@ -1,13 +1,13 @@
+import os
 from huggingface_hub import InferenceClient
 
-# Insert your API key here
-API_KEY = "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"
+# Get Hugging Face API key from GitHub secret
+hf_api_key = os.getenv("HF_API_KEY")
 
-client = InferenceClient(token=API_KEY)
+client = InferenceClient(hf_api_key)
 
-prompt = "A cinematic fantasy scene of Medusa as a princess in action, suspenseful, cinematic lighting"
+# Example usage
+prompt = "Cinematic Medusa fantasy scene, realistic style"
 result = client.text_to_image(prompt)
-
-# Save the image
 with open("scene_1.png", "wb") as f:
     f.write(result)
