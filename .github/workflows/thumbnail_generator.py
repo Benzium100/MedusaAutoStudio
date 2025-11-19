@@ -1,55 +1,44 @@
 # thumbnail_generator.py
-from PIL import Image, ImageDraw, ImageFont
-import textwrap
-import random
 import os
+from huggingface_hub import InferenceClient
+from PIL import Image, ImageDraw, ImageFont
 
-# Config
-thumbnail_path = "thumbnail.png"
-width, height = 1280, 720  # YouTube recommended 1280x720
-font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # adjust if needed
+# ---------- SETTINGS ----------
+HF_API_KEY = os.getenv("HF_API_KEY")  # Your Hugging Face API key stored in GitHub Secrets
+OUTPUT_FILE = "thumbnail.png"
+TITLE_TEXT = "Medusa: Daily Adventure"
+FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # Change if needed
+FONT_SIZE = 60
+IMAGE_WIDTH = 1280
+IMAGE_HEIGHT = 720
+MODEL = "runwayml/stable-diffusion-v1-5"  # Stable Diffusion model
 
-# Example story title (can be loaded from your JSON story)
-story_titles = [
-    "Medusa's Dark Secret",
-    "The Cursed Princess",
-    "Battle of Shadows",
-    "Medusa's Revenge",
-    "The Hidden Labyrinth"
-]
-title_text = random.choice(story_titles)
+# ---------- GENERATE BASE IMAGE ----------
+client = InferenceClient(HF_API_KEY)
+prompt = (
+    "Cinematic fantasy scene, Medusa as a heroic princess in action, "
+    "dramatic lighting, mystical environment, 4k cinematic composition"
+)
 
-# Create base thumbnail
-bg_colors = ["#0B0C10", "#1F2833", "#4B4B4B", "#2C3E50"]
-bg_color = random.choice(bg_colors)
-thumbnail = Image.new("RGB", (width, height), color=bg_color)
+result = client.text_to_image(prompt, model=MODEL)
+img = Image.open(result)
+img = img.resize((IMAGE_WIDTH, IMAGE_HEIGHT))
 
-draw = ImageDraw.Draw(thumbnail)
+# ---------- ADD TITLE TEXT ----------
+draw = ImageDraw.Draw(img)
+font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
 
-# Optional: add a vignette effect
-for i in range(200):
-    draw.rectangle(
-        [i, i, width-i, height-i],
-        outline=(0,0,0, int(255*(i/200)))
-    )
+# Center text
+text_width, text_height = draw.textsize(TITLE_TEXT, font=font)
+x = (IMAGE_WIDTH - text_width) // 2
+y = IMAGE_HEIGHT - text_height - 50  # Slightly above bottom
+# Add outline for readability
+outline_range = 3
+for ox in range(-outline_range, outline_range+1):
+    for oy in range(-outline_range, outline_range+1):
+        draw.text((x+ox, y+oy), TITLE_TEXT, font=font, fill="black")
+draw.text((x, y), TITLE_TEXT, font=font, fill="white")
 
-# Add story title text
-font_size = 70
-font = ImageFont.truetype(font_path, font_size)
-margin = 40
-max_width = width - 2*margin
-lines = textwrap.wrap(title_text, width=20)  # wrap text to fit thumbnail
-
-y_text = height//2 - (len(lines) * font_size)//2
-for line in lines:
-    w, h = draw.textsize(line, font=font)
-    draw.text(((width-w)/2, y_text), line, font=font, fill="white", stroke_width=2, stroke_fill="black")
-    y_text += h + 10
-
-# Optional: add a random cinematic accent (like glowing eyes or effect)
-accent_color = random.choice(["#FF0000", "#00FFFF", "#FFD700"])
-draw.ellipse([width-200, 50, width-100, 150], fill=accent_color)
-
-# Save thumbnail
-thumbnail.save(thumbnail_path)
-print(f"Thumbnail saved to {thumbnail_path}")
+# ---------- SAVE THUMBNAIL ----------
+img.save(OUTPUT_FILE)
+print(f"Thumbnail saved as {OUTPUT_FILE}")
