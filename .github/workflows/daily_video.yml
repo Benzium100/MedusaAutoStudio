@@ -2,56 +2,44 @@ name: Daily Medusa Video
 
 on:
   schedule:
-    # Runs every day at 2 PM Nigeria Time (UTC+1 → 13:00 UTC)
-    - cron: '0 13 * * *'
-  workflow_dispatch: # allows manual trigger
+    - cron: "0 14 * * *" # 2 PM Nigeria time daily
+  workflow_dispatch:
 
 jobs:
   build-and-upload:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-    - name: Install system dependencies (FFmpeg)
-      run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Generate story
+        run: python story_generator.py
 
-    - name: Generate story
-      env:
-        HF_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
-      run: python story_generator.py
+      - name: Generate images
+        run: python image_generator.py
 
-    - name: Generate images
-      env:
-        HF_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
-      run: python image_generator.py
+      - name: Generate TTS
+        run: python tts_generator.py
 
-    - name: Generate TTS
-      run: python tts_generator.py
+      - name: Build video using FFmpeg
+        run: |
+          # Combine images into video (assumes images are scene_1.png ... scene_N.png)
+          ffmpeg -framerate 1/6 -i scene_%d.png -i story_audio.mp3 -c:v libx264 -r 30 -pix_fmt yuv420p -c:a aac daily_video.mp4
 
-    - name: Build video
-      run: python video_builder.py
-
-    - name: Generate thumbnail
-      run: python thumbnail_generator.py
-
-    - name: Upload to Google Drive
-      env:
-        DRIVE_CREDENTIALS: ${{ secrets.DRIVE_CREDENTIALS }}
-      run: python drive_upload.py
-
-    - name: Upload to YouTube
-      env:
-        YT_API_KEY: ${{ secrets.YT_API_KEY }}
-      run: python youtube_upload.py
+      - name: Upload to YouTube
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: python youtube_upload.py
