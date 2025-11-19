@@ -1,10 +1,11 @@
-from gtts import gTTS
 import json
+from gtts import gTTS
+import os
 
-with open("daily_story.json", "r", encoding="utf-8") as f:
-    scenes = json.load(f)
+with open("daily_story.json") as f:
+    story = json.load(f)
 
-full_text = " ".join([s["description"] for s in scenes])
-tts = gTTS(full_text, lang="en")
+text = " ".join([scene["description"] for scene in story["scenes"]])
+tts = gTTS(text=text, lang="en", slow=False)
 tts.save("story_audio.mp3")
-print("TTS audio generated.")
+print("Audio generated successfully.")
