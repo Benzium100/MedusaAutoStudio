@@ -1,42 +1,23 @@
-from moviepy.editor import *
+from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips, CompositeVideoClip
 import os
 
-# Load all images
-image_files = sorted([f"images/{f}" for f in os.listdir("images") if f.endswith(".png")])
-
-# Load story narration
 audio_clip = AudioFileClip("story_audio.mp3")
+duration_per_scene = audio_clip.duration / 5  # 5 scenes
 
-# Load background music (optional, can be looped)
-bg_music = AudioFileClip("background_music.mp3").volumex(0.2)  # reduce volume
-
-# Make sure background music matches audio duration
-if bg_music.duration < audio_clip.duration:
-    bg_music = afx.audio_loop(bg_music, duration=audio_clip.duration)
-
-# Combine narration and background music
-final_audio = CompositeAudioClip([bg_music, audio_clip])
-
-# Generate video clips with fade-in/out transitions
 clips = []
-num_images = len(image_files)
-scene_duration = audio_clip.duration / num_images
+for i in range(1, 6):
+    img_clip = ImageClip(f"images/scene_{i}.png").set_duration(duration_per_scene).fadein(1).fadeout(1)
+    clips.append(img_clip)
 
-for img_file in image_files:
-    clip = ImageClip(img_file).set_duration(scene_duration)
-    clip = clip.crossfadein(1).crossfadeout(1)  # 1-second fade transitions
-    clips.append(clip)
-
-# Concatenate all clips smoothly
 video = concatenate_videoclips(clips, method="compose")
-video = video.set_audio(final_audio)
-video.write_videofile(
-    "daily_video.mp4",
-    fps=24,
-    codec="libx264",
-    audio_codec="aac",
-    preset="ultrafast",
-    threads=4
-)
 
-print("Cinematic video with transitions and background music generated!")
+# Optional: background music
+if os.path.exists("background_music.mp3"):
+    bg_music = AudioFileClip("background_music.mp3").volumex(0.3)
+    final_audio = CompositeVideoClip([audio_clip, bg_music])
+    video.audio = final_audio.audio
+else:
+    video.audio = audio_clip
+
+video.write_videofile("daily_video.mp4", fps=24, codec="libx264", audio_codec="aac")
+print("Video created successfully.")
