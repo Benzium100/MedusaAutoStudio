@@ -41,8 +41,7 @@ jobs:
           python youtube_upload.py
 
       - name: Upload to Drive (optional)
-        if: ${{ secrets.DRIVE_CREDENTIALS != '' }}
         env:
           DRIVE_CREDENTIALS: ${{ secrets.DRIVE_CREDENTIALS }}
         run: |
-          python drive_upload.py
+          python drive_upload.py || echo "Drive upload skipped: credentials missing or empty"
