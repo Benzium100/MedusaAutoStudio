@@ -1,25 +1,23 @@
 import json
 import random
+from datetime import datetime
 
-# Long cinematic Medusa story, broken into dynamic scenes
-scenes = [
-    {"title": "Medusa Awakens", "description": "Medusa opens her eyes in the dark temple..."},
-    {"title": "The Cursed Forest", "description": "She ventures through the mystical forest, hearing whispers..."},
-    {"title": "Battle of Shadows", "description": "Monsters attack, but Medusa fights with her powers..."},
-    {"title": "Allies Revealed", "description": "A mysterious figure helps her navigate the dangers..."},
-    {"title": "The Final Confrontation", "description": "Medusa faces the dark lord in an epic showdown..."}
-]
+def generate_story():
+    # 30-min cinematic story, broken into scenes
+    scenes = [
+        {"title": "The Royal Chambers", "description": "Medusa awakens in her palace as shadows creep in..."},
+        {"title": "The Forbidden Garden", "description": "She walks through the enchanted garden, every step revealing hidden secrets."},
+        {"title": "The Battle Begins", "description": "Dark forces approach, and Medusa draws her legendary weapons."},
+        {"title": "Chase Through the Caves", "description": "Twisting, echoing caves become a battlefield of magic and steel."},
+        {"title": "Triumph and Revelation", "description": "Medusa confronts the final enemy, discovering her true power and destiny."},
+    ]
 
-# Duplicate or shuffle scenes to reach 30-min video length (~10x)
-final_scenes = []
-for i in range(10):
-    for scene in scenes:
-        s = scene.copy()
-        s["scene_number"] = len(final_scenes)+1
-        final_scenes.append(s)
+    random.shuffle(scenes)
+    story = {"title": f"Medusa Daily Tale {datetime.now().strftime('%Y-%m-%d')}", "scenes": scenes}
 
-# Save to JSON
-with open("daily_story.json", "w", encoding="utf-8") as f:
-    json.dump(final_scenes, f, ensure_ascii=False, indent=4)
+    with open("daily_story.json", "w") as f:
+        json.dump(story, f, indent=4)
+    print("Story generated successfully.")
 
-print("Story JSON generated with", len(final_scenes), "scenes.")
+if __name__ == "__main__":
+    generate_story()
