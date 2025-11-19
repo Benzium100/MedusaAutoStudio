@@ -1,13 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
-import os
 
-def main():
-    img = Image.open("scene_1.png")
-    draw = ImageDraw.Draw(img)
-    font = ImageFont.load_default()
-    draw.text((10, 10), "Medusa: Daily Epic", fill="white", font=font)
-    img.save("thumbnail.png")
-    print("Thumbnail generated!")
-
-if __name__ == "__main__":
-    main()
+img = Image.new('RGB', (1280, 720), color=(30, 30, 30))
+d = ImageDraw.Draw(img)
+font = ImageFont.load_default()
+d.text((50,300), "Medusa: Daily Adventure", fill=(255,0,0), font=font)
+img.save("thumbnail.png")
