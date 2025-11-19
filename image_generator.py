@@ -1,18 +1,28 @@
 import json
-import requests
 import os
+import requests
 
-API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+HF_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"
+
+# Load story
 with open("daily_story.json") as f:
     story = json.load(f)
 
-for idx, scene in enumerate(story["scenes"], start=1):
-    prompt = f"{scene['description']} cinematic, highly detailed, realistic, 720p landscape"
-    response = requests.post(
-        "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
-        headers={"Authorization": f"Bearer {API_KEY}"},
-        json={"inputs": prompt}
-    )
-    image_bytes = response.content
-    with open(f"scene_{idx}.png", "wb") as img_file:
-        img_file.write(image_bytes)
+# Ensure images folder exists
+os.makedirs("images", exist_ok=True)
+
+headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+
+for i, scene in enumerate(story["scenes"]):
+    prompt = f"Cinematic, highly detailed scene: {scene['title']} - {scene['description']}"
+    response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
+
+    if response.status_code == 200:
+        image_bytes = response.content
+        image_path = f"images/scene_{i+1}.png"
+        with open(image_path, "wb") as f:
+            f.write(image_bytes)
+        print(f"Saved image: {image_path}")
+    else:
+        print(f"Failed to generate image for scene {i+1}: {response.text}")
