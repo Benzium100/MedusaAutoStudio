@@ -1,40 +1,39 @@
-name: Daily Medusa Video
+name: Daily Medusa Video Automation
 
 on:
   schedule:
-    - cron: "0 14 * * *"   # Runs every day at 2PM UTC
+    - cron: "0 13 * * *"   # Runs every day 2PM Nigeria time
   workflow_dispatch:
 
 jobs:
-  generate-video:
+  run_medusa_pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 120   # Max 2 hours
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
-      
+          python-version: '3.10'
+
       - name: Install dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
-      - name: Generate story
-        run: python3 story_generator.py
+      - name: Run Story Generator
+        run: python story_generator.py
 
-      - name: Generate images (20 scenes)
-        run: python3 image_generator.py
+      - name: Run Image Generator
+        env:
+          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+        run: python image_generator.py
 
-      - name: Generate voiceover
-        run: python3 tts_generator.py
+      - name: Run TTS Generator
+        run: python tts_generator.py
 
-      - name: Build video
-        run: python3 video_builder.py
-
-      - name: Upload to YouTube
-        run: python3 upload_to_youtube.py
+      - name: Run Video Builder
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
+        run: python video_builder.py
