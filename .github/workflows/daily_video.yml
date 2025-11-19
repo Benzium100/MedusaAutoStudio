@@ -1,9 +1,7 @@
-name: Daily Video
+name: Daily Medusa Video
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 14 * * *' # Runs daily at 2 PM Nigeria time (UTC+1)
 
 jobs:
   build-and-upload:
@@ -16,7 +14,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -25,37 +23,33 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      - name: Generate Story
-        run: |
-          python story_generator.py
+      - name: Generate Story JSON
+        run: python story_generator.py
 
       - name: Generate Images
+        run: python image_generator.py
         env:
           HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
-        run: |
-          python image_generator.py
 
       - name: Generate TTS Audio
-        run: |
-          python tts_generator.py
+        run: python tts_generator.py
 
       - name: Build Video
-        run: |
-          python video_builder.py
+        run: python video_builder.py
 
       - name: Generate Thumbnail
-        run: |
-          python thumbnail_generator.py
+        run: python thumbnail_generator.py
 
       - name: Upload to YouTube
+        if: ${{ secrets.YT_API_KEY }}
+        run: python youtube_upload.py
         env:
           YT_API_KEY: ${{ secrets.YT_API_KEY }}
-        run: |
-          python youtube_upload.py
 
-      - name: Upload to Google Drive (Optional)
-        if: secrets.DRIVE_CREDENTIALS != ''
-        env:
-          DRIVE_CREDENTIALS: ${{ secrets.DRIVE_CREDENTIALS }}
-        run: |
-          python drive_upload.py
+      - name: Upload to Google Drive
+        if: ${{ secrets.DRIVE_CREDENTIALS }}
+        uses: google-github-actions/upload-cloud-storage@v1
+        with:
+          credentials_json: ${{ secrets.DRIVE_CREDENTIALS }}
+          path: daily_video.mp4
+          destination: "YOUR_DRIVE_FOLDER_ID/daily_video.mp4"
