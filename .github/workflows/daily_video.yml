@@ -1,54 +1,52 @@
-name: Daily Medusa Video
+name: Daily Video Automation
 
 on:
   schedule:
-    - cron: '0 14 * * *' # 2 PM Nigeria time
-  workflow_dispatch:
+    # Runs at 2 PM Nigeria time (UTC+1 => 13:00 UTC)
+    - cron: '0 13 * * *'
+  workflow_dispatch:  # Allows manual trigger
 
 jobs:
-  build-upload:
+  build-and-upload:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install gTTS moviepy pillow requests huggingface-hub
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Generate Story
-      run: python story_generator.py
+      - name: Generate Story
+        run: python story_generator.py
 
-    - name: Generate Images
-      env:
-        HF_API_KEY: ${{ secrets.HF_API_KEY }}
-      run: python image_generator.py
+      - name: Generate Images
+        env:
+          HF_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+        run: python image_generator.py
 
-    - name: Generate TTS
-      run: python tts_generator.py
+      - name: Generate Voiceover
+        run: python tts_generator.py
 
-    - name: Build Video
-      run: python video_builder.py
+      - name: Build Video
+        run: python video_builder.py
 
-    - name: Upload to Google Drive
-      uses: gdrive-upload-action@v1
-      with:
-        service_account_json: ${{ secrets.GDRIVE_SERVICE_JSON }}
-        source: "daily_video.mp4"
-        destination: "MedusaDaily/"
+      - name: Generate Thumbnail
+        run: python thumbnail_generator.py
 
-    - name: Upload to YouTube
-      uses: googleapis/github-actions-youtube@v1
-      with:
-        api_key: ${{ secrets.YOUTUBE_API_KEY }}
-        video_file: "daily_video.mp4"
-        title: "Daily Medusa Cinematic Story"
-        description: "Watch Medusa's 30-minute cinematic adventure. #Medusa #Fantasy #Cinematic"
-        tags: "Medusa,Fantasy,Adventure,Cinematic,AI Video"
-        privacy_status: "public"
+      - name: Upload to Google Drive
+        env:
+          GDRIVE_SERVICE_JSON: ${{ secrets.DRIVE_CREDENTIALS }}
+        run: python drive_upload.py
+
+      - name: Upload to YouTube
+        env:
+          YT_API_KEY: ${{ secrets.YT_API_KEY }}
+        run: python youtube_upload.py
