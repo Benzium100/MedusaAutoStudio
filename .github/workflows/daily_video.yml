@@ -1,4 +1,4 @@
-name: Daily Medusa Video
+name: Daily Video Workflow
 
 on:
   workflow_dispatch:
@@ -8,46 +8,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
 
-      - name: Generate Story JSON
-        run: python story_generator.py
+    - name: Run Story Generator
+      run: python story_generator.py
 
-      - name: Generate Images
-        run: python image_generator.py
-        env:
-          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+    - name: Run Image Generator
+      env:
+        HF_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+      run: python image_generator.py
 
-      - name: Generate TTS Audio
-        run: python tts_generator.py
+    - name: Run TTS Generator
+      run: python tts_generator.py
 
-      - name: Build Video
-        run: python video_builder.py
+    - name: Build Video (FFmpeg)
+      run: python video_builder.py
 
-      - name: Generate Thumbnail
-        run: python thumbnail_generator.py
-
-      - name: Upload to YouTube
-        run: python youtube_upload.py
-        env:
-          YT_API_KEY: ${{ secrets.YT_API_KEY }}
-
-      - name: Upload to Google Drive
-        uses: google-github-actions/upload-cloud-storage@v1
-        with:
-          credentials_json: ${{ secrets.DRIVE_CREDENTIALS }}
-          path: daily_video.mp4
-          destination: "YOUR_DRIVE_FOLDER_ID/daily_video.mp4"
+    - name: Upload to YouTube
+      env:
+        YT_API_KEY: ${{ secrets.YT_API_KEY }}
+      run: python youtube_upload.py
