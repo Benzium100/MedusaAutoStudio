@@ -41,13 +41,11 @@ jobs:
         run: python thumbnail_generator.py
 
       - name: Upload to YouTube
-        if: ${{ secrets.YT_API_KEY }}
         run: python youtube_upload.py
         env:
           YT_API_KEY: ${{ secrets.YT_API_KEY }}
 
       - name: Upload to Google Drive
-        if: ${{ secrets.DRIVE_CREDENTIALS }}
         uses: google-github-actions/upload-cloud-storage@v1
         with:
           credentials_json: ${{ secrets.DRIVE_CREDENTIALS }}
