@@ -2,50 +2,59 @@ name: Daily Medusa Video
 
 on:
   schedule:
-    - cron: "0 14 * * *"  # Runs daily at 2 PM Nigeria time (UTC+1 adjust if needed)
-  workflow_dispatch:  # Allows manual triggering
+    # Runs at 2 PM Nigeria time daily (UTC+1 = 13:00 UTC)
+    - cron: '0 13 * * *'
+  workflow_dispatch: # allows manual trigger
 
 jobs:
   build-and-upload:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-    - name: Generate Story
-      run: python story_generator.py
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Generate Images
-      env:
-        HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
-      run: python image_generator.py
+      - name: Generate story
+        run: python story_generator.py
 
-    - name: Generate TTS Audio
-      run: python tts_generator.py
+      - name: Generate images
+        env:
+          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+        run: python image_generator.py
 
-    - name: Build Video
-      run: python video_builder.py
+      - name: Generate TTS audio
+        run: python tts_generator.py
 
-    - name: Generate Thumbnail
-      run: python thumbnail_generator.py
+      - name: Build video
+        run: python video_builder.py
 
-    - name: Upload to Google Drive
-      env:
-        DRIVE_CREDENTIALS: ${{ secrets.DRIVE_CREDENTIALS }}
-      run: python drive_upload.py
+      - name: Generate thumbnail
+        run: python thumbnail_generator.py
 
-    - name: Upload to YouTube
-      env:
-        YOUTUBE_API_KEY: ${{ secrets.YT_API_KEY }}
-      run: python youtube_upload.py
+      - name: Upload to Google Drive
+        env:
+          DRIVE_CREDENTIALS: ${{ secrets.DRIVE_CREDENTIALS }}
+        run: python drive_upload.py
+
+      - name: Upload to YouTube
+        env:
+          YT_API_KEY: ${{ secrets.YT_API_KEY }}
+        run: python youtube_upload.py
