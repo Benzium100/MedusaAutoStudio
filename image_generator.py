@@ -1,28 +1,32 @@
 import json
 import os
-import requests
+from PIL import Image, ImageDraw, ImageFont
 
-HF_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
-API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"
+# Load your daily story JSON
+story_file = "daily_story.json"
 
-# Load story
-with open("daily_story.json") as f:
+if not os.path.exists(story_file):
+    print("ERROR: daily_story.json not found!")
+    exit(1)
+
+with open(story_file, "r") as f:
     story = json.load(f)
 
-# Ensure images folder exists
-os.makedirs("images", exist_ok=True)
+# Create images folder
+image_folder = "./images"
+os.makedirs(image_folder, exist_ok=True)
 
-headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+# Generate one image per scene
+for idx, scene in enumerate(story["scenes"], start=1):
+    img = Image.new("RGB", (1920, 1080), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    
+    # Simple text overlay (you can replace with AI-generated images later)
+    font = ImageFont.load_default()
+    draw.text((50, 50), scene["text"], fill="black", font=font)
+    
+    file_path = os.path.join(image_folder, f"scene_{idx}.png")
+    img.save(file_path)
+    print(f"Saved {file_path}")
 
-for i, scene in enumerate(story["scenes"]):
-    prompt = f"Cinematic, highly detailed scene: {scene['title']} - {scene['description']}"
-    response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
-
-    if response.status_code == 200:
-        image_bytes = response.content
-        image_path = f"images/scene_{i+1}.png"
-        with open(image_path, "wb") as f:
-            f.write(image_bytes)
-        print(f"Saved image: {image_path}")
-    else:
-        print(f"Failed to generate image for scene {i+1}: {response.text}")
+print(f"All {len(story['scenes'])} images generated in {image_folder}")
