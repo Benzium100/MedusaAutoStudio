@@ -2,21 +2,20 @@ import subprocess
 import os
 
 # Settings
-image_folder = "./images"  # Folder containing scene_1.png, scene_2.png, etc.
+image_folder = "./images"
 audio_file = "story_audio.mp3"
 output_video = "daily_video.mp4"
-frame_duration = 5  # seconds per image
+frame_duration = 10  # seconds per image (adjust for ~30-min video if many images)
 
-# Generate input.txt for FFmpeg
+# Create input.txt for FFmpeg
 image_files = sorted([f for f in os.listdir(image_folder) if f.endswith(".png")])
 with open("input.txt", "w") as f:
     for img in image_files:
         f.write(f"file '{os.path.join(image_folder, img)}'\n")
         f.write(f"duration {frame_duration}\n")
-    # Repeat last image to match audio length
-    f.write(f"file '{os.path.join(image_folder, image_files[-1])}'\n")
+    f.write(f"file '{os.path.join(image_folder, image_files[-1])}'\n")  # repeat last frame
 
-# Build the video using FFmpeg
+# FFmpeg command
 cmd = [
     "ffmpeg",
     "-y",
@@ -32,5 +31,4 @@ cmd = [
 ]
 
 subprocess.run(cmd, check=True)
-
-print(f"Video created successfully: {output_video}")
+print(f"Video created successfully: {output_video}"
