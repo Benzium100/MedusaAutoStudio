@@ -2,10 +2,15 @@ import json
 from gtts import gTTS
 import os
 
-with open("daily_story.json") as f:
-    story = json.load(f)
+def main():
+    with open("daily_story.json") as f:
+        story = json.load(f)
+    text = ""
+    for scene in story["scenes"]:
+        text += f"{scene['title']}. {scene['description']}\n"
+    tts = gTTS(text, lang="en")
+    tts.save("story_audio.mp3")
+    print("TTS audio generated!")
 
-text = " ".join([scene["description"] for scene in story["scenes"]])
-tts = gTTS(text=text, lang="en", slow=False)
-tts.save("story_audio.mp3")
-print("Audio generated successfully.")
+if __name__ == "__main__":
+    main()
