@@ -2,7 +2,8 @@ name: Daily Medusa Video
 
 on:
   schedule:
-    - cron: "0 14 * * *" # 2 PM Nigeria time daily
+    # Runs at 2 PM Nigeria time (UTC+1 → 13:00 UTC)
+    - cron: '0 13 * * *'
   workflow_dispatch:
 
 jobs:
@@ -16,30 +17,32 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-
-      - name: Generate story
-        run: python story_generator.py
+          pip install moviepy gTTS requests Pillow huggingface-hub google-api-python-client
 
       - name: Generate images
-        run: python image_generator.py
-
-      - name: Generate TTS
-        run: python tts_generator.py
-
-      - name: Build video using FFmpeg
+        env:
+          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
         run: |
-          # Combine images into video (assumes images are scene_1.png ... scene_N.png)
-          ffmpeg -framerate 1/6 -i scene_%d.png -i story_audio.mp3 -c:v libx264 -r 30 -pix_fmt yuv420p -c:a aac daily_video.mp4
+          python image_generator.py
+
+      - name: Build video
+        run: |
+          python video_builder.py
 
       - name: Upload to YouTube
         env:
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-        run: python youtube_upload.py
+          YT_API_KEY: ${{ secrets.YT_API_KEY }}
+        run: |
+          python youtube_upload.py
+
+      - name: Upload to Drive (optional)
+        if: ${{ secrets.DRIVE_CREDENTIALS != '' }}
+        env:
+          DRIVE_CREDENTIALS: ${{ secrets.DRIVE_CREDENTIALS }}
+        run: |
+          python drive_upload.py
