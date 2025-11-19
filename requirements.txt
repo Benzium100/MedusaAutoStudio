@@ -1,6 +1,6 @@
 moviepy
-gtts
+gTTS
 requests
 Pillow
 huggingface-hub
-pydub
+google-api-python-client
