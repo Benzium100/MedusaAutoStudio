@@ -1,39 +1,61 @@
-name: Daily Medusa Video Automation
+name: Daily Medusa Video
 
+# Run every day at 2 PM Nigeria time (UTC+1)
 on:
   schedule:
-    - cron: "0 13 * * *"   # Runs every day 2PM Nigeria time
-  workflow_dispatch:
+    - cron: "0 13 * * *" # 13:00 UTC = 14:00 Nigeria
+  workflow_dispatch: # allows manual run
 
 jobs:
-  run_medusa_pipeline:
+  build-and-upload:
     runs-on: ubuntu-latest
-
+    env:
+      HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      DRIVE_API_KEY: ${{ secrets.DRIVE_API_KEY }}
     steps:
+      # 1. Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      # 2. Setup Python
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
+      # 3. Cache pip packages
+      - name: Cache Python packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # 4. Install dependencies
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run Story Generator
+      # 5. Run Python scripts sequentially
+      - name: Generate Story
         run: python story_generator.py
 
-      - name: Run Image Generator
-        env:
-          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+      - name: Generate Images
         run: python image_generator.py
 
-      - name: Run TTS Generator
+      - name: Generate TTS Audio
         run: python tts_generator.py
 
-      - name: Run Video Builder
-        env:
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
+      - name: Build Video
         run: python video_builder.py
+
+      # 6. Upload to Google Drive
+      - name: Upload to Drive
+        run: python upload_to_drive.py
+
+      # 7. Upload to YouTube
+      - name: Upload to YouTube
+        run: python upload_to_youtube.py
